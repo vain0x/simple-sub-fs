@@ -1,0 +1,36 @@
+(⊤ -> 'a) as 'a
+'a -> 'a -> 'a
+(⊤ -> 'a) as 'a
+
+{tail: 'a} as 'a -> ⊤ -> int
+{tail: 'a} as 'a -> {tail: 'b} as 'b -> int
+{tail: 'a} as 'a -> {tail: 'b} as 'b -> int
+{tail: 'a} as 'a -> {tail: 'b} as 'b -> int
+{tail: {tail: 'a} as 'a} -> {tail: {tail: 'b} as 'b} -> int
+// ^ Could simplify more `{tail: {tail: 'a} as 'a}` to `{tail: 'a} as 'a`
+//    This would likely require another hash-consing pass.
+//    Indeed, currently, we coalesce {tail: ‹{tail: ‹α25›}›} and it's hash-consing
+//    which introduces the 'a to stand for {tail: ‹α25›}
+// ^ Note: MLsub says:
+//    let rec f = fun x -> fun y -> (f x.tail x) + (f y.tail y)
+//    val f : ({tail : (rec b = {tail : b})} -> ({tail : {tail : (rec a = {tail : a})}} -> int))
+{tail: 'a} as 'a -> {tail: {tail: 'b} as 'b} -> int
+// ^ Note: MLsub says:
+//    let rec f = fun x -> fun y -> (f x.tail x.tail) + (f y.tail y.tail)
+//    val f : ({tail : {tail : (rec b = {tail : b})}} -> ({tail : {tail : (rec a = {tail : a})}} -> int))
+{tail: 'a} as 'a -> {tail: {tail: 'b} as 'b} -> int
+
+'a -> 'a -> {l: 'a, r: 'a}
+
+('b ∧ {t: 'a}) as 'a -> {t: 'c} as 'c -> ('b ∨ {t: 'd}) as 'd
+// ^ Note: MLsub says:
+//    let rec f = fun x -> fun y -> if true then x else { t = f x.t y.t }
+//    val f : (({t : (rec d = ({t : d} & a))} & a) -> ({t : (rec c = {t : c})} -> ({t : (rec b = ({t : b} | a))} | a)))
+// ^ Pottier says a simplified version would essentially be, once translated to MLsub types:
+//    {t: 'a} as 'a -> 'a -> {t: 'd} as 'd
+// but even he does not infer that.
+// Notice the loss of connection between the first parameetr and the result, in his proposed type,
+// which he says is not necessary as it is actually implied.
+// He argues that if 'a <: F 'a and F 'b <: 'b then 'a <: 'b, for a type operator F,
+// which does indeed seem true (even in MLsub),
+// though leveraging such facts for simplification would require much more advanced reasoning.

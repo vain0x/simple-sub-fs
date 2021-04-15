@@ -1,0 +1,12 @@
+int -> {head: int, tail: 'a} as 'a
+{head: int, tail: 'a} as 'a -> int
+{head: int, tail: 'a} as 'a
+int
+{head: int, tail: {head: int, tail: 'a}} as 'a
+int
+bool -> {head: int, tail: {head: int, tail: 'a}} as 'a
+// ^ simplifying this would probably require more advanced
+// automata-based techniques such as the one proposed by Dolan
+bool -> int
+{head: int, tail: {head: int, tail: 'a}} as 'a -> int
+int

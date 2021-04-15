@@ -1,0 +1,6 @@
+'a -> 'a
+('a ∨ 'b -> 'a) -> 'b -> 'a
+{x: int, y: 'a -> 'a}
+{x: int, y: bool}
+bool -> {x: int, y: bool ∨ ('a -> 'a)}
+'a -> {self: 'b, thing: 'a} as b

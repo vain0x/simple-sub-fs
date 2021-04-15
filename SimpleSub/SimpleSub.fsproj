@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Helpers.fs" />
+    <Compile Include="Syntax.fs" />
+    <Compile Include="SyntaxTokenize.fs" />
+    <Compile Include="SyntaxParseContext.fs" />
+    <Compile Include="SyntaxParse.fs" />
+    <Compile Include="Typer.fs" />
+    <Compile Include="TypeSimplifier.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+</Project>

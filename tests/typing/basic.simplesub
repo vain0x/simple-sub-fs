@@ -1,0 +1,22 @@
+let t = 42
+//? t: int
+
+let t = fun x -> 42
+//? t: ⊤ -> int
+
+let t = fun x -> x
+//? t: 'a -> 'a
+
+let t = fun x -> x 42
+//? t: (int -> 'a) -> 'a
+
+let t = (fun x -> x) 42
+//? t: int
+
+let twice = fun f -> fun x -> f (f x)
+//? twice: ('a ∨ 'b -> 'a) -> 'b -> 'a
+
+let t =
+    let twice = fun f -> fun x -> f (f x)
+    in twice
+//? t: ('a ∨ 'b -> 'a) -> 'b -> 'a

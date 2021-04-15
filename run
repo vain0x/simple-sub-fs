@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -eu
+
+dotnet build -noLogo --no-restore SimpleSub 1>&2
+
+cat tests/typing/basic.simplesub | dotnet run --no-build -p SimpleSub
+
+# cat tests/program/mlsub/mlsub.simplesub | dotnet run --no-build -p SimpleSub
+
+# ls tests/program | xargs -I{} sh -c 'echo "\n# {}\n"; cat tests/program/{}/$(basename {}).simplesub | dotnet run --no-build -p SimpleSub'
