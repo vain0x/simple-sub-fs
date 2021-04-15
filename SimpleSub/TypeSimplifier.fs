@@ -17,7 +17,7 @@ type CompactTy =
     Record: (string * CompactTy) list option
     Fn: (CompactTy * CompactTy) option }
 
-  override this.ToString(): string =
+  override this.ToString() : string =
     [ yield! this.Vars |> Seq.map string
       yield! this.Prims
 
@@ -34,30 +34,29 @@ type CompactTy =
     |> sprintf "<%s>"
 
 module CompactTy =
-  let empty: CompactTy =
+  let empty : CompactTy =
     { Vars = []
       Prims = []
       Record = None
       Fn = None }
 
-  let ofVar v: CompactTy = { empty with Vars = [ v ] }
+  let ofVar v : CompactTy = { empty with Vars = [ v ] }
 
-  let ofVars vs: CompactTy = { empty with Vars = vs }
+  let ofVars vs : CompactTy = { empty with Vars = vs }
 
-  let ofPrim name: CompactTy = { empty with Prims = [ name ] }
+  let ofPrim name : CompactTy = { empty with Prims = [ name ] }
 
-  let ofRecord fs: CompactTy = { empty with Record = Some fs }
+  let ofRecord fs : CompactTy = { empty with Record = Some fs }
 
-  let ofFn l r: CompactTy = { empty with Fn = Some(l, r) }
+  let ofFn l r : CompactTy = { empty with Fn = Some(l, r) }
 
-  let isEmpty (ty: CompactTy): bool =
-    ty.Vars
-    |> List.isEmpty
+  let isEmpty (ty: CompactTy) : bool =
+    ty.Vars |> List.isEmpty
     && ty.Prims |> List.isEmpty
     && ty.Record |> Option.isNone
     && ty.Fn |> Option.isNone
 
-  let rec merge (pol: Polarity) (lhs: CompactTy) (rhs: CompactTy): CompactTy =
+  let rec merge (pol: Polarity) (lhs: CompactTy) (rhs: CompactTy) : CompactTy =
     let vars = List.append lhs.Vars rhs.Vars
     let prims = List.append lhs.Prims rhs.Prims
 
@@ -103,7 +102,7 @@ type CompactTyScheme = CompactTy * MutableMap<Variable, CompactTy>
 /// 推論結果の型をコンパクトな表現に変換する。
 ///
 /// 例えば α <: <{ x: A }, { x: B, y: C }> を α <: { x: A ∧ B, y: C } に変形する。
-let toCompactTy (ty: SimpleTy): CompactTyScheme =
+let toCompactTy (ty: SimpleTy) : CompactTyScheme =
   let recursive = MutableMap.empty<PolarVar, Variable> ()
   let recVars = MutableMap.empty<Variable, CompactTy> ()
   let inProcess = MutableSet.empty<PolarVar> ()
@@ -113,26 +112,29 @@ let toCompactTy (ty: SimpleTy): CompactTyScheme =
   let withoutParents f =
     let oldParents = parents
     parents <- MutableSet.empty ()
+
     try
       f ()
     finally
       parents <- oldParents
 
-  let rec go ty pol: CompactTy =
+  let rec go ty pol : CompactTy =
     match ty with
     | PrimST name -> CompactTy.ofPrim name
 
     | FnST (l, r) ->
-        withoutParents (fun () ->
-          let l = go l (Polarity.negate pol)
-          let r = go r pol
-          CompactTy.ofFn l r)
+        withoutParents
+          (fun () ->
+            let l = go l (Polarity.negate pol)
+            let r = go r pol
+            CompactTy.ofFn l r)
 
     | RecordST fs ->
-        withoutParents (fun () ->
-          fs
-          |> List.map (fun (n, t) -> n, go t pol)
-          |> CompactTy.ofRecord)
+        withoutParents
+          (fun () ->
+            fs
+            |> List.map (fun (n, t) -> n, go t pol)
+            |> CompactTy.ofRecord)
 
     | VarST tv ->
         let bounds =
@@ -160,6 +162,7 @@ let toCompactTy (ty: SimpleTy): CompactTyScheme =
           parents |> MutableSet.add tv
 
           let mutable bound = CompactTy.ofVar tv
+
           for b in bounds do
             let b = go b pol
             bound <- CompactTy.merge pol bound b
@@ -181,107 +184,109 @@ type PolarVars = (Variable list * Polarity)
 
 let closeOver xs f = []
 
-  // def closeOver[A](xs: Set[A])(f: A => Set[A]): Set[A] =
-  //   closeOverCached(Set.empty, xs)(f)
-  // def closeOverCached[A](done: Set[A], todo: Set[A])(f: A => Set[A]): Set[A] =
-  //   if (todo.isEmpty) done else {
-  //     val newDone = done ++ todo
-  //     closeOverCached(newDone, todo.flatMap(f) -- newDone)(f)
-  //   }
+// def closeOver[A](xs: Set[A])(f: A => Set[A]): Set[A] =
+//   closeOverCached(Set.empty, xs)(f)
+// def closeOverCached[A](done: Set[A], todo: Set[A])(f: A => Set[A]): Set[A] =
+//   if (todo.isEmpty) done else {
+//     val newDone = done ++ todo
+//     closeOverCached(newDone, todo.flatMap(f) -- newDone)(f)
+//   }
 
-let canonicalizeTy (ty: SimpleTy): CompactTyScheme =
-  let recursive = MutableMap.empty<PolarVars, Variable>()
-  let recVars = MutableMap.empty<Variable, CompactTy>()
-  let inProcess = MutableSet.empty<PolarVars>()
+let canonicalizeTy (ty: SimpleTy) : CompactTyScheme =
+  let recursive = MutableMap.empty<PolarVars, Variable> ()
+  let recVars = MutableMap.empty<Variable, CompactTy> ()
+  let inProcess = MutableSet.empty<PolarVars> ()
 
-  let rec go0 (ty: SimpleTy) (pol: Polarity): CompactTy =
+  let rec go0 (ty: SimpleTy) (pol: Polarity) : CompactTy =
     match ty with
-    | PrimST name ->
-      CompactTy.ofPrim name
+    | PrimST name -> CompactTy.ofPrim name
 
     | FnST (l, r) ->
-      let l = go0 l (Polarity.negate pol)
-      let r = go0 r pol
-      CompactTy.ofFn l r
+        let l = go0 l (Polarity.negate pol)
+        let r = go0 r pol
+        CompactTy.ofFn l r
 
     | RecordST fs ->
-      fs |> List.map (fun (n, t) -> n, go0 t pol)
-      |> CompactTy.ofRecord
+        fs
+        |> List.map (fun (n, t) -> n, go0 t pol)
+        |> CompactTy.ofRecord
 
     | VarST tv ->
-        closeOver [tv] (fun ty ->
-          match ty with
-          | VarST tv1 ->
-            let bounds =
-              match pol with
-              | Positive -> tv1.LowerBounds
-              | Negative -> tv1.UpperBounds
+        closeOver
+          [ tv ]
+          (fun ty ->
+            match ty with
+            | VarST tv1 ->
+                let bounds =
+                  match pol with
+                  | Positive -> tv1.LowerBounds
+                  | Negative -> tv1.UpperBounds
 
-            [
-              for t in bounds do
-                match t with
-                | VarST v -> yield v
-                | _ -> ()
-            ]
+                [ for t in bounds do
+                    match t with
+                    | VarST v -> yield v
+                    | _ -> () ]
 
-          | _ -> []
-        ) |> CompactTy.ofVars
+            | _ -> [])
+        |> CompactTy.ofVars
 
   and go1 (ty: CompactTy) (pol: Polarity) =
     if ty |> CompactTy.isEmpty then
       ty
     else
-      if inProcess |> MutableSet.contains (ty.Vars, pol) then
-          ty.Vars
-          |> List.map (fun v ->
-            match recursive |> MutableMap.tryFind (ty.Vars, pol) with
-            | Some v -> v
-            | None ->
-              let v = freshVar 0
-              recursive |> MutableMap.add (ty.Vars, pol) v
-              v
-          )
-          |> CompactTy.ofVars
-      else
-          let bound =
-            seq {
-              for tv in ty.Vars do
-                let bounds =
-                  match pol with
-                  | Positive -> tv.LowerBounds
-                  | Negative -> tv.UpperBounds
 
-                for b in bounds do
-                  match b with
-                  | VarST v -> ()
-                  | _ -> go0 b pol
-            }
-            |> Seq.fold (CompactTy.merge pol) CompactTy.empty
+    if inProcess |> MutableSet.contains (ty.Vars, pol) then
+      ty.Vars
+      |> List.map
+           (fun v ->
+             match recursive |> MutableMap.tryFind (ty.Vars, pol) with
+             | Some v -> v
+             | None ->
+                 let v = freshVar 0
+                 recursive |> MutableMap.add (ty.Vars, pol) v
+                 v)
+      |> CompactTy.ofVars
+    else
+      let bound =
+        seq {
+          for tv in ty.Vars do
+            let bounds =
+              match pol with
+              | Positive -> tv.LowerBounds
+              | Negative -> tv.UpperBounds
 
-          let res = CompactTy.merge pol ty bound
+            for b in bounds do
+              match b with
+              | VarST v -> ()
+              | _ -> go0 b pol
+        }
+        |> Seq.fold (CompactTy.merge pol) CompactTy.empty
 
-          if ty.Vars |> List.isEmpty |> not then
-            inProcess |> MutableSet.add (ty.Vars, pol)
+      let res = CompactTy.merge pol ty bound
 
-          try
-            let adapted: CompactTy =
-             {
-               Vars = res.Vars
-               Prims = res.Prims
-               Record = res.Record |> Option.map (fun fs -> fs |> List.map (fun (n, t) -> n, go1 t pol))
-               Fn = res.Fn |> Option.map (fun (l, r) -> go1 l (Polarity.negate pol), go1 r pol)
-             }
+      if ty.Vars |> List.isEmpty |> not then
+        inProcess |> MutableSet.add (ty.Vars, pol)
 
-            match recursive |> MutableMap.tryFind (ty.Vars, pol) with
-            | Some v ->
-              recVars |>MutableMap.add v adapted
-              CompactTy.ofVar v
+      try
+        let adapted : CompactTy =
+          { Vars = res.Vars
+            Prims = res.Prims
+            Record =
+              res.Record
+              |> Option.map (fun fs -> fs |> List.map (fun (n, t) -> n, go1 t pol))
+            Fn =
+              res.Fn
+              |> Option.map (fun (l, r) -> go1 l (Polarity.negate pol), go1 r pol) }
 
-            | None ->
-              adapted
+        match recursive |> MutableMap.tryFind (ty.Vars, pol) with
+        | Some v ->
+            recVars |> MutableMap.add v adapted
+            CompactTy.ofVar v
 
-          finally
-            inProcess |> MutableSet.remove (ty.Vars, pol)
+        | None -> adapted
+
+      finally
+        inProcess |> MutableSet.remove (ty.Vars, pol)
 
   let ty = go0 ty Positive
   let ty = go1 ty Positive
@@ -292,14 +297,16 @@ let canonicalizeTy (ty: SimpleTy): CompactTyScheme =
 //    例: ('a & 'b) -> 'b -> ('a, 'b) は 'a -> 'a' -> ('a, 'a) とは異なる
 //        ( )
 //    例: 'a -> 'b -> 'a | 'b は 'a -> 'a -> 7a と等しい。
-let simplifyTy (cty: CompactTyScheme): CompactTyScheme =
+let simplifyTy (cty: CompactTyScheme) : CompactTyScheme =
 
 
   // TODO
   cty
 
-let coalesceCompactTy (cty: CompactTyScheme): Ty =
-  failwith ""
+let coalesceCompactTy (cty: CompactTyScheme) : Ty = failwith ""
 
-let coalesceTySimplified (ty: SimpleTy): Ty =
-  ty |> toCompactTy |> simplifyTy |> coalesceCompactTy
+let coalesceTySimplified (ty: SimpleTy) : Ty =
+  ty
+  |> toCompactTy
+  |> simplifyTy
+  |> coalesceCompactTy

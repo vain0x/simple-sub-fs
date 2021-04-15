@@ -7,7 +7,7 @@ open SimpleSub.Syntax
 // Char type
 // -----------------------------------------------
 
-let charIsSpace (c: char): bool =
+let charIsSpace (c: char) : bool =
   match c with
   | ' '
   | '\t'
@@ -16,9 +16,9 @@ let charIsSpace (c: char): bool =
 
   | _ -> false
 
-let charIsDigit (c: char): bool = '0' <= c && c <= '9'
+let charIsDigit (c: char) : bool = '0' <= c && c <= '9'
 
-let charIsIdent (c: char): bool =
+let charIsIdent (c: char) : bool =
   ('A' <= c && c <= 'Z')
   || ('a' <= c && c <= 'z')
   || charIsDigit c
@@ -29,7 +29,7 @@ let charIsIdent (c: char): bool =
 // -----------------------------------------------
 
 module Keyword =
-  let parse (s: string): TokenKind =
+  let parse (s: string) : TokenKind =
     match s with
     | "else" -> ElseKw
     // | "false" -> FalseKw
@@ -60,7 +60,7 @@ type Lookahead =
 
   | TokenLa of kind: TokenKind * tokenLen: int
 
-let lookahead (i: int) (s: string): Lookahead =
+let lookahead (i: int) (s: string) : Lookahead =
   assert (i < s.Length)
 
   match nth i s with
@@ -103,7 +103,7 @@ let lookahead (i: int) (s: string): Lookahead =
 // Consume
 // -----------------------------------------------
 
-let consume (la: Lookahead) (i: int) (s: string): struct (TokenKind * int) =
+let consume (la: Lookahead) (i: int) (s: string) : struct (TokenKind * int) =
   match la with
   | BadTokenLa len ->
       let len =
@@ -152,7 +152,7 @@ type TokenizeResult =
     Kinds: ResizeArray<TokenKind>
     Ranges: ResizeArray<Range> }
 
-let dumpTokens (result: TokenizeResult): unit =
+let dumpTokens (result: TokenizeResult) : unit =
   assert (result.Kinds.Count = result.Ranges.Count)
   printfn "tokens: %d" result.Kinds.Count
 
@@ -163,7 +163,7 @@ let dumpTokens (result: TokenizeResult): unit =
 
     | _ -> printfn "%A (%O)" kind range
 
-let tokenize (s: string): TokenizeResult =
+let tokenize (s: string) : TokenizeResult =
   let kinds = ResizeArray()
   let ranges = ResizeArray()
 
@@ -186,6 +186,7 @@ let tokenize (s: string): TokenizeResult =
   assert (i = s.Length)
   assert (pos.Index = i)
   assert (kinds.Count = ranges.Count)
+
   { Text = s
     Kinds = kinds
     Ranges = ranges }

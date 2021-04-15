@@ -3,7 +3,7 @@ module rec SimpleSub.SyntaxParse
 open SimpleSub.Syntax
 open SimpleSub.SyntaxParseContext
 
-let expectIdent (px: Px): string =
+let expectIdent (px: Px) : string =
   match px.Next with
   | IdentToken name ->
       px.Bump() |> ignore
@@ -13,19 +13,19 @@ let expectIdent (px: Px): string =
       px.Error("Expected identifier")
       "_"
 
-let expectToken (kind: TokenKind) (message: string) (px: Px): unit =
+let expectToken (kind: TokenKind) (message: string) (px: Px) : unit =
   match px.Eat(kind) with
   | Some _ -> ()
   | None -> px.Error("Expected " + message)
 
-let expectTerm (px: Px): Term =
+let expectTerm (px: Px) : Term =
   match px |> parseTerm with
   | Some term -> term
   | None ->
       px.Error("Expected term")
       VarTerm "_"
 
-let parseRecordArgs (px: Px): (string * Term) list =
+let parseRecordArgs (px: Px) : (string * Term) list =
   let rec go1 acc =
     match px.Next with
     | EofToken
@@ -35,6 +35,7 @@ let parseRecordArgs (px: Px): (string * Term) list =
         px.Bump() |> ignore
 
         px |> expectToken EqualToken "="
+
         let arg = px |> expectTerm
 
         let acc = (name, arg) :: acc
@@ -54,7 +55,7 @@ let parseRecordArgs (px: Px): (string * Term) list =
 
   go1 [] |> List.rev
 
-let parseAtomicTerm (px: Px): Term option =
+let parseAtomicTerm (px: Px) : Term option =
   match px.Next with
   // | TrueKw ->
   //     px.Bump() |> ignore
@@ -88,7 +89,7 @@ let parseAtomicTerm (px: Px): Term option =
 
   | _ -> None
 
-let parseSelectTerm (px: Px): Term option =
+let parseSelectTerm (px: Px) : Term option =
   let rec go (lhs: Term) =
     match px.Next with
     | DotToken ->
@@ -102,7 +103,7 @@ let parseSelectTerm (px: Px): Term option =
   | Some lhs -> go lhs |> Some
   | None -> None
 
-let parseAppTerm (px: Px): Term option =
+let parseAppTerm (px: Px) : Term option =
   let rec go (lhs: Term) =
     match px |> parseSelectTerm with
     | None -> lhs
@@ -116,7 +117,7 @@ let parseAppTerm (px: Px): Term option =
 
   | None -> None
 
-let parseTerm (px: Px): Term option =
+let parseTerm (px: Px) : Term option =
   match px.Next with
   | IfKw ->
       px.Bump() |> ignore
@@ -163,7 +164,7 @@ let parseTerm (px: Px): Term option =
 
   | _ -> px |> parseAppTerm
 
-let parseDef (px: Px): Def option =
+let parseDef (px: Px) : Def option =
   match px.Next with
   | LetKw ->
       px.Bump() |> ignore
@@ -187,7 +188,7 @@ let parseDef (px: Px): Def option =
 
   | _ -> None
 
-let parseDefs (px: Px): ProgramDef =
+let parseDefs (px: Px) : ProgramDef =
   let rec go acc =
     match px.Next with
     | EofToken -> acc
@@ -203,6 +204,6 @@ let parseDefs (px: Px): ProgramDef =
   let defs = go [] |> List.rev
   { Defs = defs }
 
-let parseAll (tokens: SyntaxTokenize.TokenizeResult) (errors: ResizeArray<_>): ProgramDef =
+let parseAll (tokens: SyntaxTokenize.TokenizeResult) (errors: ResizeArray<_>) : ProgramDef =
   let px = Px(tokens.Kinds, errors)
   parseDefs px

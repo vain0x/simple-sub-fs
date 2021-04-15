@@ -96,7 +96,7 @@ type Ty =
   override this.ToString() = this |> Ty.doShowWith string
 
 module Ty =
-  let children (ty: Ty): Ty list =
+  let children (ty: Ty) : Ty list =
     match ty with
     | VarTy _
     | TopTy
@@ -111,7 +111,7 @@ module Ty =
 
     | MuTy (_, ty) -> [ ty ]
 
-  let tyVars (ty: Ty): TyVar list =
+  let tyVars (ty: Ty) : TyVar list =
     let output = MutArray()
 
     let rec go (ty: Ty) =
@@ -132,7 +132,7 @@ module Ty =
   /// 型を文字列にする。
   ///
   /// 型変数は指定された関数を使って文字列化する。
-  let doShowWith (showVar: TyVar -> string) (ty: Ty): string =
+  let doShowWith (showVar: TyVar -> string) (ty: Ty) : string =
     // prec: 結合の強さ
     let rec go (prec: int) (ty: Ty) =
       match ty with
@@ -169,7 +169,7 @@ module Ty =
 
     go 0 ty
 
-  let showIn (ctx: Map<TyVar, string>) (ty: Ty): string =
+  let showIn (ctx: Map<TyVar, string>) (ty: Ty) : string =
     ty
     |> doShowWith (fun tyVar -> ctx |> Map.find tyVar)
 

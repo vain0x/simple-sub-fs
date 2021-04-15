@@ -13,7 +13,7 @@ type Pos =
 
   static member Zero = Pos.Create(0, 0, 0)
 
-  static member Create(index: int, row: int, column: int): Pos =
+  static member Create(index: int, row: int, column: int) : Pos =
     { Index = index
       Row = row
       Column = column }
@@ -21,21 +21,26 @@ type Pos =
   static member (+)(left: Pos, right: Pos) =
     let index = left.Index + right.Index
 
-    if right.Row = 0
-    then Pos.Create(index, left.Row, left.Column + right.Column)
-    else Pos.Create(index, left.Row + right.Row, right.Column)
+    if right.Row = 0 then
+      Pos.Create(index, left.Row, left.Column + right.Column)
+    else
+      Pos.Create(index, left.Row + right.Row, right.Column)
 
   override this.ToString() =
     sprintf "%d:%d" (this.Row + 1) (this.Column + 1)
 
 module Pos =
-  let scan (start: int) (len: int) (s: string): Pos =
+  let scan (start: int) (len: int) (s: string) : Pos =
     let endIndex = start + len
     assert (endIndex <= s.Length)
 
     let rec go (row: int) (head: int) =
       let index = s.IndexOf("\n", head)
-      if index < 0 || index >= endIndex then Pos.Create(len, row, endIndex - head) else go (row + 1) (index + 1)
+
+      if index < 0 || index >= endIndex then
+        Pos.Create(len, row, endIndex - head)
+      else
+        go (row + 1) (index + 1)
 
     go 0 start
 
@@ -49,7 +54,7 @@ type Range =
   { Start: Pos
     End: Pos }
 
-  static member Create(start: Pos, endPos: Pos): Range = { Start = start; End = endPos }
+  static member Create(start: Pos, endPos: Pos) : Range = { Start = start; End = endPos }
 
   override this.ToString() =
     let py = this.Start.Row + 1
@@ -66,7 +71,7 @@ type Range =
 let hex (n: int) = sprintf "%x" n
 
 /// i 番目の文字
-let nth (i: int) (s: string): char = if i < s.Length then s.[i] else '\x00'
+let nth (i: int) (s: string) : char = if i < s.Length then s.[i] else '\x00'
 
 /// 部分文字列
 let substr (l: int) (r: int) (s: string) = if l < r then s.[l..r - 1] else ""
@@ -121,7 +126,7 @@ module MutableSet =
 
   let remove item (set: MutableSet<_>) = set.Remove(item) |> ignore
 
-  let toList (set: MutableSet<_>): _ list = List.ofSeq set
+  let toList (set: MutableSet<_>) : _ list = List.ofSeq set
 
 // -----------------------------------------------
 // MutableMap
@@ -143,9 +148,14 @@ module MutableMap =
 
   let add key value (map: MutableMap<'K, 'T>) = map.Add(key, value)
 
-  let toList (map: MutableMap<_, _>) = [ for (KeyValue (k, v)) in map -> k, v ]
+  let toList (map: MutableMap<_, _>) =
+    [ for (KeyValue (k, v)) in map -> k, v ]
 
-let mergeMaps<'K, 'T when 'K: equality> (merger: 'T -> 'T -> 'T) (lhs: ('K * 'T) seq) (rhs: ('K * 'T) seq): ('K * 'T) list =
+let mergeMaps<'K, 'T when 'K: equality>
+  (merger: 'T -> 'T -> 'T)
+  (lhs: ('K * 'T) seq)
+  (rhs: ('K * 'T) seq)
+  : ('K * 'T) list =
   let map = MutableMap.empty ()
 
   for k, v in Seq.append lhs rhs do

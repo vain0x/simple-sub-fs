@@ -22,7 +22,7 @@ type Polarity =
   | Negative
 
 module Polarity =
-  let negate (p: Polarity): Polarity =
+  let negate (p: Polarity) : Polarity =
     match p with
     | Positive -> Negative
     | Negative -> Positive
@@ -31,9 +31,9 @@ module Polarity =
 // Variable
 // -----------------------------------------------
 
-let lastVarId: int ref = ref 0
+let lastVarId : int ref = ref 0
 
-let freshVarId (): string =
+let freshVarId () : string =
   incr lastVarId
   let id = !lastVarId
   sprintf "%x" id
@@ -56,9 +56,9 @@ type Variable =
     /// 一時的に利用される。
     mutable Recursive: bool }
 
-  override this.ToString(): string = sprintf "α'%d" this.Level
+  override this.ToString() : string = sprintf "α'%d" this.Level
 
-let freshVar (level: Level): Variable =
+let freshVar (level: Level) : Variable =
   let id = freshVarId ()
   let tyVar = TyVar("α", id.GetHashCode())
 
@@ -86,7 +86,7 @@ type SimpleTy =
 
   | VarST of Variable
 
-let simpleTyLevel: SimpleTy -> int =
+let simpleTyLevel : SimpleTy -> int =
   // メモ化
   let cache = MutableMap.empty<SimpleTy, int> ()
 
@@ -132,7 +132,7 @@ type TyScheme =
   /// レベルが limit 以上の型変数は量化されているとみなす。
   | PolyTS of limit: Level * SimpleTy
 
-let instantiate (level: Level) (tyScheme: TyScheme): SimpleTy =
+let instantiate (level: Level) (tyScheme: TyScheme) : SimpleTy =
   match tyScheme with
   | MonoTS ty -> ty
   | PolyTS (limit, ty) -> freshenAbove limit ty level
@@ -148,7 +148,7 @@ let BoolST = PrimST "bool"
 let IntST = PrimST "int"
 
 /// 組み込みのシンボルからなる環境
-let builtInCtx (): Ctx =
+let builtInCtx () : Ctx =
   let builtins =
     [
       // true: bool
@@ -178,12 +178,12 @@ let builtInCtx (): Ctx =
 // -----------------------------------------------
 
 /// 型変数をフレッシュ化する
-let freshenAbove (limit: Level) (ty: SimpleTy) (level: Level): SimpleTy =
+let freshenAbove (limit: Level) (ty: SimpleTy) (level: Level) : SimpleTy =
   eprintfn "trace: freshenAbove limit=%d ty=%O level=%d" limit ty level
 
   let freshened = MutableMap.empty<Variable, Variable> ()
 
-  let rec doFreshen (recurse: SimpleTy -> SimpleTy) (tv: Variable): Variable =
+  let rec doFreshen (recurse: SimpleTy -> SimpleTy) (tv: Variable) : Variable =
     let v = freshVar level
     freshened |> MutableMap.add tv v
 
@@ -200,7 +200,7 @@ let freshenAbove (limit: Level) (ty: SimpleTy) (level: Level): SimpleTy =
     v.UpperBounds <- freshenBounds tv.UpperBounds
     v
 
-  let rec go (ty: SimpleTy): SimpleTy =
+  let rec go (ty: SimpleTy) : SimpleTy =
     if simpleTyLevel ty <= limit then
       ty
     else
@@ -233,12 +233,12 @@ let freshenAbove (limit: Level) (ty: SimpleTy) (level: Level): SimpleTy =
 // constrain (制限する)
 // -----------------------------------------------
 
-let constrain (lhs: SimpleTy) (rhs: SimpleTy): unit =
+let constrain (lhs: SimpleTy) (rhs: SimpleTy) : unit =
   eprintfn "trace: constrain %O <: %O" lhs rhs
 
   let cache = MutableSet<(SimpleTy * SimpleTy)>()
 
-  let preventRecursion lhs rhs: bool =
+  let preventRecursion lhs rhs : bool =
     if cache |> MutableSet.contains (lhs, rhs) then
       true
     else
@@ -252,7 +252,7 @@ let constrain (lhs: SimpleTy) (rhs: SimpleTy): unit =
 
       false
 
-  let rec go (lhs: SimpleTy) (rhs: SimpleTy): unit =
+  let rec go (lhs: SimpleTy) (rhs: SimpleTy) : unit =
     if preventRecursion lhs rhs |> not then
       match lhs, rhs with
       | FnST (l0, l1), FnST (r0, r1) ->
@@ -294,12 +294,12 @@ let constrain (lhs: SimpleTy) (rhs: SimpleTy): unit =
 // -----------------------------------------------
 
 /// 型に出現する型変数のレベルを lvl まで下げる。
-let extrude (lvl: Level) (pol: Polarity) (ty: SimpleTy): SimpleTy =
+let extrude (lvl: Level) (pol: Polarity) (ty: SimpleTy) : SimpleTy =
   eprintfn "trace: extrude lvl=%d pol=%A ty=%O" lvl pol ty
 
   let cache = MutableMap<Variable, Variable>()
 
-  let rec go (lvl: Level) (pol: Polarity) (ty: SimpleTy): SimpleTy =
+  let rec go (lvl: Level) (pol: Polarity) (ty: SimpleTy) : SimpleTy =
     if simpleTyLevel ty <= lvl then
       ty
     else
@@ -326,7 +326,7 @@ let extrude (lvl: Level) (pol: Polarity) (ty: SimpleTy): SimpleTy =
                 let nvs = freshVar lvl
                 cache |> MutableMap.add tv nvs
 
-                let extrudeBounds (bounds: MutArray<SimpleTy>): unit =
+                let extrudeBounds (bounds: MutArray<SimpleTy>) : unit =
                   for i in 0 .. bounds.Count - 1 do
                     bounds.[i] <- go lvl pol bounds.[i]
 
@@ -355,13 +355,13 @@ let extrude (lvl: Level) (pol: Polarity) (ty: SimpleTy): SimpleTy =
 type Ctx = Map<string, TyScheme>
 
 module Ctx =
-  let empty: Ctx = Map.empty
+  let empty : Ctx = Map.empty
 
   /// 環境に変数を導入する。
-  let bind (name: string) (scheme: TyScheme) (ctx: Ctx): Ctx = Map.add name scheme ctx
+  let bind (name: string) (scheme: TyScheme) (ctx: Ctx) : Ctx = Map.add name scheme ctx
 
   /// 環境から変数を名前で探す。
-  let findVar (name: string) (ctx: Ctx): TyScheme =
+  let findVar (name: string) (ctx: Ctx) : TyScheme =
     match ctx |> Map.tryFind name with
     | Some scheme -> scheme
     | None -> err (sprintf "identifier not found: %s" name)
@@ -373,7 +373,7 @@ module Ctx =
 /// let 式の右辺 (初期化式) の型を解決する。
 ///
 /// 結果はレベル lvl の多相な型スキーム (PolyTS) になる。
-let typeLetRhs (lvl: Level) (ctx: Ctx) (isRec: IsRec) (name: string) (rhs: Term): SimpleTy =
+let typeLetRhs (lvl: Level) (ctx: Ctx) (isRec: IsRec) (name: string) (rhs: Term) : SimpleTy =
   match isRec with
   | Rec ->
       // let rec ではいま束縛しようとしている変数を右辺で参照できるので、右辺の型検査を行う時点でその変数を環境に入れておく必要がある。
@@ -391,7 +391,7 @@ let typeLetRhs (lvl: Level) (ctx: Ctx) (isRec: IsRec) (name: string) (rhs: Term)
   | NotRec -> typeTerm (lvl + 1) ctx rhs
 
 /// 項の型検査を行う。
-let typeTerm (lvl: Level) (ctx: Ctx) (term: Term): SimpleTy =
+let typeTerm (lvl: Level) (ctx: Ctx) (term: Term) : SimpleTy =
   eprintfn "trace: typeTerm lvl=%d term=%A" lvl term
 
   match term with
@@ -455,16 +455,20 @@ type TyResult = Result<Ty, string>
 /// トップレベルの名前と、それの型検査の結果のマップ
 type InferenceResult = (string * TyResult) list
 
-let inferTypes (coalesceTy: SimpleTy -> Ty) (ctx: Ctx) (p: ProgramDef): InferenceResult =
+let inferTypes (coalesceTy: SimpleTy -> Ty) (ctx: Ctx) (p: ProgramDef) : InferenceResult =
   let mutable ctx = ctx
-  let results = MutArray.empty<string * TyResult>()
+  let results = MutArray.empty<string * TyResult> ()
 
   for def in p.Defs do
     eprintfn "trace: ---- inferType (%s) ----" def.Name
     eprintfn "trace: rhs = %A" def.Rhs
 
     let lvl = 0
-    let { IsRec = isRec; Name = name; Rhs = rhs } = def
+
+    let { IsRec = isRec
+          Name = name
+          Rhs = rhs } =
+      def
 
     let result, ty =
       try
@@ -478,16 +482,17 @@ let inferTypes (coalesceTy: SimpleTy -> Ty) (ctx: Ctx) (p: ProgramDef): Inferenc
   List.ofSeq results
 
 /// 型を推論の内部的な表現から通常の (イミュータブルな) 表現に変換する。
-let coalesceTy (simpleTy: SimpleTy): Ty =
+let coalesceTy (simpleTy: SimpleTy) : Ty =
   let recursive = MutableMap<PolarVar, TyVar>()
 
   // mutable hash set
   let inProcess = MutableSet<PolarVar>()
 
-  let rec go polarity simpleTy: Ty =
+  let rec go polarity simpleTy : Ty =
     match simpleTy with
     | VarST tv ->
         let polarVar = tv, polarity
+
         if inProcess |> MutableSet.contains polarVar then
           let v =
             match recursive |> MutableMap.tryFind polarVar with
@@ -506,7 +511,7 @@ let coalesceTy (simpleTy: SimpleTy): Ty =
 
           inProcess |> MutableSet.add polarVar
 
-          let result: Ty =
+          let result : Ty =
             bounds
             |> Seq.map (fun ty -> go polarity ty)
             |> Seq.fold folder (VarTy tv.TyVar)
